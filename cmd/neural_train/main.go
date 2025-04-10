@@ -143,10 +143,8 @@ func main() {
 
 	// Print initial information
 	fmt.Println("Neural Network Self-Play Training")
+	fmt.Println("Detailed logs will be written to logs/training_*.log")
 	fmt.Println("Press Ctrl+C to stop training")
-	fmt.Println("Press 'p' to pause/resume")
-	fmt.Println("Press 's' to save the current network")
-	fmt.Println("Press 'h' to display help")
 	fmt.Println()
 
 	// Start a goroutine to handle user input
@@ -179,6 +177,8 @@ func main() {
 
 		// Log detailed statistics periodically
 		if gameNum > 0 && gameNum%params.LogInterval == 0 {
+			// Move to next line after progress bar
+			fmt.Println()
 			logDetailedStats(gameNum, stats, epsilon)
 		}
 
