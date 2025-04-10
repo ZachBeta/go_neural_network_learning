@@ -1,51 +1,57 @@
 # Go Neural Network Learning
 
-Exploring different ways that neural networks learn by implementing them from scratch in Go.
+A tutorial project implementing neural networks from scratch in Go, using Tic-Tac-Toe as a learning problem. This project demonstrates the implementation of both single-layer perceptrons and multi-layer neural networks, leveraging Go's concurrency features for optimized training on Apple M1 hardware.
 
-## Project Overview
+## Project Structure
 
-This project aims to implement various neural network architectures from scratch, starting with a simple perceptron and evolving to more complex networks. We'll use Tic-tac-toe as our initial problem domain to make the learning process interactive and observable.
-
-### Current Focus: Tic-tac-toe AI using Neural Networks
-
-#### Implementation Plan
-
-1. **Core Components**
-   - Game Logic: Simple 3x3 array representation
-   - Neural Network: Starting with a basic perceptron
-   - Training System: Self-play with game state caching
-   - CLI Interface: Interactive gameplay and training visualization
-
-2. **Technical Approach**
-   - Leverage Go's concurrency features for parallel training
-   - Implement efficient state representation and caching
-   - Focus on clean, maintainable code structure
-   - Include comprehensive testing
-
-3. **Learning Process**
-   - Start with basic pattern recognition
-   - Evolve to more sophisticated strategies
-   - Implement visualization of learning progress
-   - Add performance metrics and analysis
-
-#### Project Structure (Planned)
 ```
 .
-├── cmd/                    # Command-line interface
-├── internal/
-│   ├── game/              # Tic-tac-toe game logic
-│   ├── neural/            # Neural network implementation
-│   ├── training/          # Training algorithms
-│   └── cache/             # Game state caching
-├── pkg/                   # Public packages
-└── test/                  # Test data and benchmarks
+├── cmd/
+│   └── tictactoe/     # Main application entry point
+├── pkg/
+│   ├── game/          # Game logic and board representation
+│   ├── network/       # Neural network implementation
+│   └── training/      # Training logic and batch processing
+└── internal/
+    └── utils/         # Internal utilities and helpers
 ```
 
-## Getting Started
-(To be added as we implement)
+## Features
 
-## Contributing
-(To be added as we implement)
+- Single-layer perceptron implementation
+- Multi-layer neural network evolution
+- Concurrent training optimization
+- Tic-Tac-Toe game implementation
+- CLI interface for interaction
+- Training visualization and metrics
+
+## Requirements
+
+- Go 1.21 or later
+- Apple M1/M2 hardware (for optimal performance)
+
+## Getting Started
+
+1. Clone the repository:
+   ```bash
+   git clone git@github.com:ZachBeta/go_neural_network_learning.git
+   cd go_neural_network_learning
+   ```
+
+2. Install dependencies:
+   ```bash
+   go mod download
+   ```
+
+3. Run the application:
+   ```bash
+   go run cmd/tictactoe/main.go
+   ```
+
+## Development
+
+This project follows a phase-based development approach. See `PHASES.md` for detailed information about the implementation phases and progress.
 
 ## License
-See LICENSE file
+
+MIT License
