@@ -98,3 +98,57 @@ func (b *Board) GetCurrentPlayer() Cell {
 func (b *Board) GetStatus() GameStatus {
 	return b.status
 }
+
+// MakeMove attempts to make a move at the specified position
+func (b *Board) MakeMove(row, col int) bool {
+	if b.status != InProgress {
+		return false
+	}
+	if !isValidPosition(row, col) || b.Get(row, col) != Empty {
+		return false
+	}
+	b.Set(row, col, b.currentPlayer)
+	b.SwitchPlayer()
+	return true
+}
+
+// CheckWinner checks for a winner and updates the game status
+func (b *Board) CheckWinner() {
+	// Check rows
+	for i := 0; i < 3; i++ {
+		if b.Get(i, 0) != Empty && b.Get(i, 0) == b.Get(i, 1) && b.Get(i, 1) == b.Get(i, 2) {
+			b.UpdateStatus(Won)
+			return
+		}
+	}
+
+	// Check columns
+	for j := 0; j < 3; j++ {
+		if b.Get(0, j) != Empty && b.Get(0, j) == b.Get(1, j) && b.Get(1, j) == b.Get(2, j) {
+			b.UpdateStatus(Won)
+			return
+		}
+	}
+
+	// Check diagonals
+	if b.Get(0, 0) != Empty && b.Get(0, 0) == b.Get(1, 1) && b.Get(1, 1) == b.Get(2, 2) {
+		b.UpdateStatus(Won)
+		return
+	}
+	if b.Get(0, 2) != Empty && b.Get(0, 2) == b.Get(1, 1) && b.Get(1, 1) == b.Get(2, 0) {
+		b.UpdateStatus(Won)
+		return
+	}
+
+	// Check for draw
+	isFull := true
+	for i := 0; i < 9; i++ {
+		if b.cells[i] == Empty {
+			isFull = false
+			break
+		}
+	}
+	if isFull {
+		b.UpdateStatus(Draw)
+	}
+}

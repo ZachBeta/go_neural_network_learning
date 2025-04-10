@@ -46,17 +46,144 @@ func TestString(t *testing.T) {
 }
 
 func TestMakeMove(t *testing.T) {
-	// This is a placeholder test that will be implemented
-	// when we create the move implementation
-	t.Run("should make valid move", func(t *testing.T) {
-		// TODO: Implement test
-	})
+	board := NewBoard()
+
+	// Test valid move
+	if !board.MakeMove(0, 0) {
+		t.Error("Failed to make valid move")
+	}
+	if board.Get(0, 0) != X {
+		t.Error("Board not updated correctly after valid move")
+	}
+	if board.GetCurrentPlayer() != O {
+		t.Error("Player not switched after valid move")
+	}
+
+	// Test invalid move
+	if board.MakeMove(0, 0) {
+		t.Error("Should not make move at occupied position")
+	}
+	if board.Get(0, 0) != X {
+		t.Error("Board should not change after invalid move")
+	}
 }
 
 func TestCheckWinner(t *testing.T) {
-	// This is a placeholder test that will be implemented
-	// when we create the win condition checking
-	t.Run("should detect horizontal win", func(t *testing.T) {
-		// TODO: Implement test
-	})
+	tests := []struct {
+		name     string
+		setup    func(*Board)
+		expected GameStatus
+	}{
+		{
+			name: "horizontal win - top row",
+			setup: func(b *Board) {
+				b.Set(0, 0, X)
+				b.Set(0, 1, X)
+				b.Set(0, 2, X)
+			},
+			expected: Won,
+		},
+		{
+			name: "horizontal win - middle row",
+			setup: func(b *Board) {
+				b.Set(1, 0, O)
+				b.Set(1, 1, O)
+				b.Set(1, 2, O)
+			},
+			expected: Won,
+		},
+		{
+			name: "horizontal win - bottom row",
+			setup: func(b *Board) {
+				b.Set(2, 0, X)
+				b.Set(2, 1, X)
+				b.Set(2, 2, X)
+			},
+			expected: Won,
+		},
+		{
+			name: "vertical win - left column",
+			setup: func(b *Board) {
+				b.Set(0, 0, O)
+				b.Set(1, 0, O)
+				b.Set(2, 0, O)
+			},
+			expected: Won,
+		},
+		{
+			name: "vertical win - middle column",
+			setup: func(b *Board) {
+				b.Set(0, 1, X)
+				b.Set(1, 1, X)
+				b.Set(2, 1, X)
+			},
+			expected: Won,
+		},
+		{
+			name: "vertical win - right column",
+			setup: func(b *Board) {
+				b.Set(0, 2, O)
+				b.Set(1, 2, O)
+				b.Set(2, 2, O)
+			},
+			expected: Won,
+		},
+		{
+			name: "diagonal win - top-left to bottom-right",
+			setup: func(b *Board) {
+				b.Set(0, 0, X)
+				b.Set(1, 1, X)
+				b.Set(2, 2, X)
+			},
+			expected: Won,
+		},
+		{
+			name: "diagonal win - top-right to bottom-left",
+			setup: func(b *Board) {
+				b.Set(0, 2, O)
+				b.Set(1, 1, O)
+				b.Set(2, 0, O)
+			},
+			expected: Won,
+		},
+		{
+			name: "draw - full board",
+			setup: func(b *Board) {
+				b.Set(0, 0, X)
+				b.Set(0, 1, O)
+				b.Set(0, 2, X)
+				b.Set(1, 0, O)
+				b.Set(1, 1, X)
+				b.Set(1, 2, O)
+				b.Set(2, 0, O)
+				b.Set(2, 1, X)
+				b.Set(2, 2, O)
+			},
+			expected: Draw,
+		},
+		{
+			name:     "no win - empty board",
+			setup:    func(b *Board) {},
+			expected: InProgress,
+		},
+		{
+			name: "no win - partial board",
+			setup: func(b *Board) {
+				b.Set(0, 0, X)
+				b.Set(1, 1, O)
+			},
+			expected: InProgress,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			board := NewBoard()
+			tt.setup(board)
+			board.CheckWinner()
+			if board.GetStatus() != tt.expected {
+				t.Errorf("expected status %v, got %v", tt.expected, board.GetStatus())
+			}
+		})
+	}
 }
