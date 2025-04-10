@@ -13,6 +13,19 @@ import (
 	"github.com/ZachBeta/go_neural_network_learning/pkg/neural"
 )
 
+// TrainingStats tracks training statistics
+type TrainingStats struct {
+	XWins         int
+	OWins         int
+	Draws         int
+	MoveCounts    [9]int
+	ForkCreates   int
+	ForkBlocks    int
+	WinningMoves  int
+	BlockingMoves int
+	LastSaveTime  time.Time
+}
+
 // TrainingParams holds the parameters for self-play training
 type TrainingParams struct {
 	NumGames      int
@@ -24,6 +37,7 @@ type TrainingParams struct {
 	DisplayDelay  time.Duration
 	SaveInterval  int
 	MaxBufferSize int
+	LogInterval   int
 }
 
 // GameState represents a single state in a game
@@ -101,6 +115,7 @@ func DefaultTrainingParams() TrainingParams {
 		DisplayDelay:  500 * time.Millisecond,
 		SaveInterval:  100,
 		MaxBufferSize: 10000,
+		LogInterval:   10, // Log every 10 games
 	}
 }
 
@@ -116,6 +131,11 @@ func main() {
 
 	// Create experience buffer
 	buffer := NewExperienceBuffer(params.MaxBufferSize)
+
+	// Initialize training stats
+	stats := &TrainingStats{
+		LastSaveTime: time.Now(),
+	}
 
 	// Create a channel for handling interrupts
 	interrupt := make(chan os.Signal, 1)
@@ -138,7 +158,10 @@ func main() {
 		epsilon := math.Max(params.EpsilonEnd, params.EpsilonStart*math.Pow(params.EpsilonDecay, float64(gameNum)))
 
 		// Play a game and collect experience
-		record := playGame(network, epsilon, params.DisplayDelay)
+		record := playGameWithVisualization(network, epsilon, params.DisplayDelay)
+
+		// Update statistics
+		updateStats(stats, record)
 
 		// Add game states to buffer
 		for _, state := range record.States {
@@ -148,15 +171,21 @@ func main() {
 		// Sample batch and update network
 		if buffer.Size() >= params.BatchSize {
 			batch := buffer.Sample(params.BatchSize)
-			updateNetwork(network, batch, params.LearningRate)
+			updateNetworkWeights(network, batch, params.LearningRate)
 		}
 
 		// Display progress
-		displayProgress(gameNum, params.NumGames, record, epsilon)
+		displayTrainingProgress(gameNum, params.NumGames, record, epsilon)
+
+		// Log detailed statistics periodically
+		if gameNum > 0 && gameNum%params.LogInterval == 0 {
+			logDetailedStats(gameNum, stats, epsilon)
+		}
 
 		// Save network periodically
 		if gameNum > 0 && gameNum%params.SaveInterval == 0 {
 			saveNetwork(network, gameNum)
+			stats.LastSaveTime = time.Now()
 		}
 
 		// Check for interrupt
@@ -164,13 +193,17 @@ func main() {
 		case <-interrupt:
 			fmt.Println("\nTraining interrupted. Saving network...")
 			saveNetwork(network, gameNum)
+			logDetailedStats(gameNum, stats, epsilon)
 			return
 		default:
 			// Continue training
 		}
 	}
 
+	// Calculate final epsilon for the last log
+	finalEpsilon := math.Max(params.EpsilonEnd, params.EpsilonStart*math.Pow(params.EpsilonDecay, float64(params.NumGames-1)))
 	fmt.Println("\nTraining completed!")
+	logDetailedStats(params.NumGames-1, stats, finalEpsilon)
 }
 
 // handleUserInput handles user input during training
@@ -178,20 +211,75 @@ func handleUserInput(interrupt chan<- os.Signal) {
 	// Implementation will be added later
 }
 
-// playGame plays a complete game and returns the game record
-func playGame(network *neural.Network, epsilon float64, displayDelay time.Duration) GameRecord {
-	// Implementation will be added later
-	return GameRecord{}
+// updateStats updates the training statistics
+func updateStats(stats *TrainingStats, record GameRecord) {
+	// Update win/draw counts
+	if record.Winner == "X" {
+		stats.XWins++
+	} else if record.Winner == "O" {
+		stats.OWins++
+	} else {
+		stats.Draws++
+	}
+
+	// Update move counts and strategy detection
+	for _, state := range record.States {
+		stats.MoveCounts[state.Move]++
+
+		// Check for strategic moves
+		if isForkCreation(state.Board, state.Move) {
+			stats.ForkCreates++
+		}
+		if isForkBlocking(state.Board, state.Move) {
+			stats.ForkBlocks++
+		}
+		if isWinningMove(state.Board, state.Move) {
+			stats.WinningMoves++
+		}
+		if isBlockingMove(state.Board, state.Move) {
+			stats.BlockingMoves++
+		}
+	}
 }
 
-// updateNetwork updates the network weights based on a batch of game states
-func updateNetwork(network *neural.Network, batch []GameState, learningRate float64) {
-	// Implementation will be added later
-}
+// logDetailedStats logs detailed training statistics
+func logDetailedStats(gameNum int, stats *TrainingStats, epsilon float64) {
+	totalGames := gameNum + 1
+	fmt.Printf("\n=== Detailed Training Statistics (Game %d) ===\n", totalGames)
 
-// displayProgress displays the training progress
-func displayProgress(gameNum, totalGames int, record GameRecord, epsilon float64) {
-	// Implementation will be added later
+	// Win rates
+	xWinRate := float64(stats.XWins) / float64(totalGames) * 100
+	oWinRate := float64(stats.OWins) / float64(totalGames) * 100
+	drawRate := float64(stats.Draws) / float64(totalGames) * 100
+	fmt.Printf("Win Rates:\n")
+	fmt.Printf("  X: %.1f%% (%d wins)\n", xWinRate, stats.XWins)
+	fmt.Printf("  O: %.1f%% (%d wins)\n", oWinRate, stats.OWins)
+	fmt.Printf("  Draws: %.1f%% (%d draws)\n", drawRate, stats.Draws)
+
+	// Move distribution
+	fmt.Printf("\nMove Distribution:\n")
+	for i, count := range stats.MoveCounts {
+		row, col := neural.MoveIndexToRowCol(i)
+		percentage := float64(count) / float64(totalGames) * 100
+		fmt.Printf("  Position (%d,%d): %.1f%% (%d moves)\n", row, col, percentage, count)
+	}
+
+	// Strategic moves
+	fmt.Printf("\nStrategic Moves:\n")
+	fmt.Printf("  Fork Creations: %d (%.1f%% of games)\n",
+		stats.ForkCreates, float64(stats.ForkCreates)/float64(totalGames)*100)
+	fmt.Printf("  Fork Blocks: %d (%.1f%% of games)\n",
+		stats.ForkBlocks, float64(stats.ForkBlocks)/float64(totalGames)*100)
+	fmt.Printf("  Winning Moves: %d (%.1f%% of games)\n",
+		stats.WinningMoves, float64(stats.WinningMoves)/float64(totalGames)*100)
+	fmt.Printf("  Blocking Moves: %d (%.1f%% of games)\n",
+		stats.BlockingMoves, float64(stats.BlockingMoves)/float64(totalGames)*100)
+
+	// Training parameters
+	fmt.Printf("\nTraining Parameters:\n")
+	fmt.Printf("  Epsilon: %.3f\n", epsilon)
+	fmt.Printf("  Time since last save: %v\n", time.Since(stats.LastSaveTime))
+	fmt.Println("==========================================\n")
 }
 
 // saveNetwork saves the network to a file

@@ -122,24 +122,93 @@ func VisualizeGame(record GameRecord, displayDelay time.Duration) {
 
 // isForkCreation checks if a move creates a fork
 func isForkCreation(board *game.Board, move int) bool {
-	// Implementation will be added later
-	return false
+	// Make a temporary board to test the move
+	tempBoard := board.Clone()
+	row, col := neural.MoveIndexToRowCol(move)
+	tempBoard.MakeMove(row, col)
+
+	// Count winning lines after the move
+	winningLines := 0
+	for i := 0; i < 9; i++ {
+		testRow, testCol := neural.MoveIndexToRowCol(i)
+		if tempBoard.Get(testRow, testCol) == game.Empty {
+			// Try this move
+			testBoard := tempBoard.Clone()
+			testBoard.MakeMove(testRow, testCol)
+			testBoard.CheckWinner()
+			if testBoard.GetStatus() == game.Won {
+				winningLines++
+			}
+		}
+	}
+
+	// A fork creates at least 2 winning lines
+	return winningLines >= 2
 }
 
 // isForkBlocking checks if a move blocks a fork
 func isForkBlocking(board *game.Board, move int) bool {
-	// Implementation will be added later
-	return false
+	// Make a temporary board to test the move
+	tempBoard := board.Clone()
+	row, col := neural.MoveIndexToRowCol(move)
+	tempBoard.MakeMove(row, col)
+
+	// Count opponent's winning lines after our move
+	winningLines := 0
+	for i := 0; i < 9; i++ {
+		testRow, testCol := neural.MoveIndexToRowCol(i)
+		if tempBoard.Get(testRow, testCol) == game.Empty {
+			// Try opponent's move
+			testBoard := tempBoard.Clone()
+			testBoard.SwitchPlayer()
+			testBoard.MakeMove(testRow, testCol)
+			testBoard.CheckWinner()
+			if testBoard.GetStatus() == game.Won {
+				winningLines++
+			}
+		}
+	}
+
+	// A fork block prevents opponent from having 2 winning lines
+	return winningLines < 2
 }
 
 // isWinningMove checks if a move is a winning move
 func isWinningMove(board *game.Board, move int) bool {
-	// Implementation will be added later
-	return false
+	// Make a temporary board to test the move
+	tempBoard := board.Clone()
+	row, col := neural.MoveIndexToRowCol(move)
+	tempBoard.MakeMove(row, col)
+	tempBoard.CheckWinner()
+
+	// Check if this move wins
+	return tempBoard.GetStatus() == game.Won
 }
 
 // isBlockingMove checks if a move blocks the opponent's winning move
 func isBlockingMove(board *game.Board, move int) bool {
-	// Implementation will be added later
-	return false
+	// Make a temporary board to test the move
+	tempBoard := board.Clone()
+	row, col := neural.MoveIndexToRowCol(move)
+	tempBoard.MakeMove(row, col)
+
+	// Switch to opponent's turn
+	tempBoard.SwitchPlayer()
+
+	// Check if opponent can win after our move
+	for i := 0; i < 9; i++ {
+		testRow, testCol := neural.MoveIndexToRowCol(i)
+		if tempBoard.Get(testRow, testCol) == game.Empty {
+			// Try opponent's move
+			testBoard := tempBoard.Clone()
+			testBoard.MakeMove(testRow, testCol)
+			testBoard.CheckWinner()
+			if testBoard.GetStatus() == game.Won {
+				return false // Opponent can still win
+			}
+		}
+	}
+
+	// If we get here, opponent cannot win after our move
+	return true
 }

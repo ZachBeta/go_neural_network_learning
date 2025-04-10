@@ -173,3 +173,15 @@ func (b *Board) CheckWinner() {
 		b.UpdateStatus(Draw)
 	}
 }
+
+// Clone creates a deep copy of the board
+func (b *Board) Clone() *Board {
+	clone := NewBoard()
+	for i := 0; i < 9; i++ {
+		row, col := i/3, i%3
+		clone.cells[row*3+col] = b.cells[row*3+col]
+	}
+	clone.currentPlayer = b.currentPlayer
+	clone.status = b.status
+	return clone
+}
