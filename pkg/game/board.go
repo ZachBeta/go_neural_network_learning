@@ -9,15 +9,28 @@ const (
 	O
 )
 
+// GameStatus represents the current status of the game
+type GameStatus int
+
+const (
+	InProgress GameStatus = iota
+	Won
+	Draw
+)
+
 // Board represents the game board using a flat array
 type Board struct {
-	cells [9]Cell
+	cells         [9]Cell
+	currentPlayer Cell
+	status        GameStatus
 }
 
 // NewBoard creates a new empty board
 func NewBoard() *Board {
 	return &Board{
-		cells: [9]Cell{Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty},
+		cells:         [9]Cell{Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty},
+		currentPlayer: X,
+		status:        InProgress,
 	}
 }
 
@@ -60,4 +73,28 @@ func (b *Board) String() string {
 		}
 	}
 	return result
+}
+
+// SwitchPlayer switches the current player
+func (b *Board) SwitchPlayer() {
+	if b.currentPlayer == X {
+		b.currentPlayer = O
+	} else {
+		b.currentPlayer = X
+	}
+}
+
+// UpdateStatus updates the game status
+func (b *Board) UpdateStatus(status GameStatus) {
+	b.status = status
+}
+
+// GetCurrentPlayer returns the current player
+func (b *Board) GetCurrentPlayer() Cell {
+	return b.currentPlayer
+}
+
+// GetStatus returns the current game status
+func (b *Board) GetStatus() GameStatus {
+	return b.status
 }
