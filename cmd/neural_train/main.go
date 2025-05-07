@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ZachBeta/go_neural_network_learning/pkg/display"
 	"github.com/ZachBeta/go_neural_network_learning/pkg/game"
 	"github.com/ZachBeta/go_neural_network_learning/pkg/neural"
 )
@@ -182,6 +183,11 @@ func main() {
 			logDetailedStats(gameNum, stats, epsilon)
 		}
 
+		// Display statistics every 100 games
+		if gameNum > 0 && gameNum%100 == 0 {
+			display.DisplayStatistics(gameNum, params.NumGames, stats.XWins, stats.OWins, stats.Draws, epsilon)
+		}
+
 		// Save network periodically
 		if gameNum > 0 && gameNum%params.SaveInterval == 0 {
 			saveNetwork(network, gameNum)
@@ -200,10 +206,12 @@ func main() {
 		}
 	}
 
-	// Calculate final epsilon for the last log
-	finalEpsilon := math.Max(params.EpsilonEnd, params.EpsilonStart*math.Pow(params.EpsilonDecay, float64(params.NumGames-1)))
+	// Training completed
 	fmt.Println("\nTraining completed!")
-	logDetailedStats(params.NumGames-1, stats, finalEpsilon)
+	logDetailedStats(params.NumGames-1, stats, params.EpsilonEnd)
+
+	// Save the final network
+	saveNetwork(network, params.NumGames-1)
 }
 
 // handleUserInput handles user input during training
@@ -244,42 +252,42 @@ func updateStats(stats *TrainingStats, record GameRecord) {
 
 // logDetailedStats logs detailed training statistics
 func logDetailedStats(gameNum int, stats *TrainingStats, epsilon float64) {
-	totalGames := gameNum + 1
-	fmt.Printf("\n=== Detailed Training Statistics (Game %d) ===\n", totalGames)
+	// Calculate percentages
+	xWinRate := float64(stats.XWins) / float64(gameNum+1) * 100
+	oWinRate := float64(stats.OWins) / float64(gameNum+1) * 100
+	drawRate := float64(stats.Draws) / float64(gameNum+1) * 100
 
-	// Win rates
-	xWinRate := float64(stats.XWins) / float64(totalGames) * 100
-	oWinRate := float64(stats.OWins) / float64(totalGames) * 100
-	drawRate := float64(stats.Draws) / float64(totalGames) * 100
-	fmt.Printf("Win Rates:\n")
-	fmt.Printf("  X: %.1f%% (%d wins)\n", xWinRate, stats.XWins)
-	fmt.Printf("  O: %.1f%% (%d wins)\n", oWinRate, stats.OWins)
-	fmt.Printf("  Draws: %.1f%% (%d draws)\n", drawRate, stats.Draws)
+	// Log detailed statistics
+	gameLogger.Info("\n=== Detailed Training Statistics (Game %d) ===", gameNum+1)
+	gameLogger.Info("Win Rates:")
+	gameLogger.Info("  X: %.1f%% (%d wins)", xWinRate, stats.XWins)
+	gameLogger.Info("  O: %.1f%% (%d wins)", oWinRate, stats.OWins)
+	gameLogger.Info("  Draws: %.1f%% (%d draws)", drawRate, stats.Draws)
 
-	// Move distribution
-	fmt.Printf("\nMove Distribution:\n")
+	// Log move distribution
+	gameLogger.Info("\nMove Distribution:")
 	for i, count := range stats.MoveCounts {
 		row, col := neural.MoveIndexToRowCol(i)
-		percentage := float64(count) / float64(totalGames) * 100
-		fmt.Printf("  Position (%d,%d): %.1f%% (%d moves)\n", row, col, percentage, count)
+		percentage := float64(count) / float64(gameNum+1) * 100
+		gameLogger.Info("  Position (%d,%d): %.1f%% (%d moves)", row, col, percentage, count)
 	}
 
-	// Strategic moves
-	fmt.Printf("\nStrategic Moves:\n")
-	fmt.Printf("  Fork Creations: %d (%.1f%% of games)\n",
-		stats.ForkCreates, float64(stats.ForkCreates)/float64(totalGames)*100)
-	fmt.Printf("  Fork Blocks: %d (%.1f%% of games)\n",
-		stats.ForkBlocks, float64(stats.ForkBlocks)/float64(totalGames)*100)
-	fmt.Printf("  Winning Moves: %d (%.1f%% of games)\n",
-		stats.WinningMoves, float64(stats.WinningMoves)/float64(totalGames)*100)
-	fmt.Printf("  Blocking Moves: %d (%.1f%% of games)\n",
-		stats.BlockingMoves, float64(stats.BlockingMoves)/float64(totalGames)*100)
+	// Log strategic moves
+	gameLogger.Info("\nStrategic Moves:")
+	gameLogger.Info("  Fork Creations: %d (%.1f%% of games)",
+		stats.ForkCreates, float64(stats.ForkCreates)/float64(gameNum+1)*100)
+	gameLogger.Info("  Fork Blocks: %d (%.1f%% of games)",
+		stats.ForkBlocks, float64(stats.ForkBlocks)/float64(gameNum+1)*100)
+	gameLogger.Info("  Winning Moves: %d (%.1f%% of games)",
+		stats.WinningMoves, float64(stats.WinningMoves)/float64(gameNum+1)*100)
+	gameLogger.Info("  Blocking Moves: %d (%.1f%% of games)",
+		stats.BlockingMoves, float64(stats.BlockingMoves)/float64(gameNum+1)*100)
 
-	// Training parameters
-	fmt.Printf("\nTraining Parameters:\n")
-	fmt.Printf("  Epsilon: %.3f\n", epsilon)
-	fmt.Printf("  Time since last save: %v\n", time.Since(stats.LastSaveTime))
-	fmt.Println("==========================================\n")
+	// Log training parameters
+	gameLogger.Info("\nTraining Parameters:")
+	gameLogger.Info("  Epsilon: %.3f", epsilon)
+	gameLogger.Info("  Time since last save: %v", time.Since(stats.LastSaveTime))
+	gameLogger.Info("==========================================\n")
 }
 
 // saveNetwork saves the network to a file

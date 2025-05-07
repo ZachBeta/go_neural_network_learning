@@ -1,39 +1,29 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"math/rand"
-	"os"
-	"path/filepath"
 	"time"
 
+	"github.com/ZachBeta/go_neural_network_learning/pkg/display"
 	"github.com/ZachBeta/go_neural_network_learning/pkg/game"
+	"github.com/ZachBeta/go_neural_network_learning/pkg/logger"
 	"github.com/ZachBeta/go_neural_network_learning/pkg/neural"
 )
 
 var (
 	// Logger for detailed gameplay information
-	gameLogger *log.Logger
+	gameLogger *logger.Logger
 )
 
 func init() {
-	// Create logs directory if it doesn't exist
-	err := os.MkdirAll("logs", 0755)
+	// Initialize the logger
+	var err error
+	gameLogger, err = logger.NewLogger("training", logger.INFO)
 	if err != nil {
-		log.Fatal("Failed to create logs directory:", err)
+		log.Fatal("Failed to initialize logger:", err)
 	}
-
-	// Create a new log file with timestamp
-	logFile := filepath.Join("logs", fmt.Sprintf("training_%s.log", time.Now().Format("2006-01-02_15-04-05")))
-	f, err := os.Create(logFile)
-	if err != nil {
-		log.Fatal("Failed to create log file:", err)
-	}
-
-	// Initialize the game logger
-	gameLogger = log.New(f, "", log.LstdFlags)
-	gameLogger.Println("Training session started")
+	gameLogger.Info("Training session started")
 }
 
 // playGameWithVisualization plays a complete game and returns the game record
@@ -138,49 +128,49 @@ func playGameWithVisualization(network *neural.Network, epsilon float64, display
 // logGameState logs detailed game state information to file
 func logGameState(board *game.Board, move, moveNum int, player string, epsilon float64, probabilities []float64) {
 	row, col := neural.MoveIndexToRowCol(move)
-	gameLogger.Printf("\nMove %d - Player %s (ε=%.3f)\n", moveNum+1, player, epsilon)
-	gameLogger.Printf("Selected move: (%d,%d)\n", row, col)
-	gameLogger.Printf("Board state:\n%s\n", board.String())
+	gameLogger.Info("\nMove %d - Player %s (ε=%.3f)", moveNum+1, player, epsilon)
+	gameLogger.Info("Selected move: (%d,%d)", row, col)
+	gameLogger.Info("Board state:\n%s", board.String())
 
 	// Log move probabilities with more detail
-	gameLogger.Println("Move probabilities:")
+	gameLogger.Info("Move probabilities:")
 	for i, prob := range probabilities {
 		r, c := neural.MoveIndexToRowCol(i)
 		if i == move {
-			gameLogger.Printf("  Position (%d,%d): %.2f%% [SELECTED]\n", r, c, prob*100)
+			gameLogger.Info("  Position (%d,%d): %.2f%% [SELECTED]", r, c, prob*100)
 		} else {
-			gameLogger.Printf("  Position (%d,%d): %.2f%%\n", r, c, prob*100)
+			gameLogger.Info("  Position (%d,%d): %.2f%%", r, c, prob*100)
 		}
 	}
 
 	// Log strategic analysis
-	gameLogger.Println("\nStrategic Analysis:")
+	gameLogger.Info("\nStrategic Analysis:")
 	if isForkCreation(board, move) {
-		gameLogger.Println("  ✓ Fork Creation detected")
+		gameLogger.Info("  ✓ Fork Creation detected")
 	}
 	if isForkBlocking(board, move) {
-		gameLogger.Println("  ✓ Fork Blocking detected")
+		gameLogger.Info("  ✓ Fork Blocking detected")
 	}
 	if isWinningMove(board, move) {
-		gameLogger.Println("  ✓ Winning Move detected")
+		gameLogger.Info("  ✓ Winning Move detected")
 	}
 	if isBlockingMove(board, move) {
-		gameLogger.Println("  ✓ Blocking Move detected")
+		gameLogger.Info("  ✓ Blocking Move detected")
 	}
 
 	// Log board evaluation
-	gameLogger.Printf("\nBoard Evaluation:\n")
-	gameLogger.Printf("  Empty cells: %d\n", countEmptyCells(board))
-	gameLogger.Printf("  Potential winning lines: %d\n", countPotentialWinningLines(board))
-	gameLogger.Println("==========================================\n")
+	gameLogger.Info("\nBoard Evaluation:")
+	gameLogger.Info("  Empty cells: %d", countEmptyCells(board))
+	gameLogger.Info("  Potential winning lines: %d", countPotentialWinningLines(board))
+	gameLogger.Info("==========================================\n")
 }
 
 // logGameResult logs the game result to file with more detail
 func logGameResult(record GameRecord) {
-	gameLogger.Printf("\nGame Summary\n")
-	gameLogger.Printf("============\n")
-	gameLogger.Printf("Winner: %s\n", record.Winner)
-	gameLogger.Printf("Total moves: %d\n", len(record.States))
+	gameLogger.Info("\nGame Summary")
+	gameLogger.Info("============")
+	gameLogger.Info("Winner: %s", record.Winner)
+	gameLogger.Info("Total moves: %d", len(record.States))
 
 	// Log move statistics
 	xMoves := 0
@@ -192,8 +182,8 @@ func logGameResult(record GameRecord) {
 			oMoves++
 		}
 	}
-	gameLogger.Printf("X moves: %d\n", xMoves)
-	gameLogger.Printf("O moves: %d\n", oMoves)
+	gameLogger.Info("X moves: %d", xMoves)
+	gameLogger.Info("O moves: %d", oMoves)
 
 	// Log strategic move counts
 	forkCreations := 0
@@ -216,12 +206,12 @@ func logGameResult(record GameRecord) {
 		}
 	}
 
-	gameLogger.Printf("\nStrategic Move Statistics:\n")
-	gameLogger.Printf("  Fork Creations: %d\n", forkCreations)
-	gameLogger.Printf("  Fork Blocks: %d\n", forkBlocks)
-	gameLogger.Printf("  Winning Moves: %d\n", winningMoves)
-	gameLogger.Printf("  Blocking Moves: %d\n", blockingMoves)
-	gameLogger.Println("==========================================\n")
+	gameLogger.Info("\nStrategic Move Statistics:")
+	gameLogger.Info("  Fork Creations: %d", forkCreations)
+	gameLogger.Info("  Fork Blocks: %d", forkBlocks)
+	gameLogger.Info("  Winning Moves: %d", winningMoves)
+	gameLogger.Info("  Blocking Moves: %d", blockingMoves)
+	gameLogger.Info("==========================================\n")
 }
 
 // selectRandomValidMove selects a random valid move
@@ -284,27 +274,10 @@ func updateNetworkWeights(network *neural.Network, batch []GameState, learningRa
 	}
 }
 
-// displayTrainingProgress shows concise training progress on screen
+// displayTrainingProgress displays the training progress
 func displayTrainingProgress(gameNum, totalGames int, record GameRecord, epsilon float64) {
-	// Calculate progress percentage
-	progress := float64(gameNum+1) / float64(totalGames) * 100
-
-	// Create a simple progress bar
-	const width = 50
-	completed := int(width * progress / 100)
-	bar := make([]byte, width)
-	for i := 0; i < completed; i++ {
-		bar[i] = '='
-	}
-	if completed < width {
-		bar[completed] = '>'
-	}
-	for i := completed + 1; i < width; i++ {
-		bar[i] = ' '
-	}
-
-	// Show minimal progress information
-	fmt.Printf("\r[%s] %.1f%% Game %d/%d", string(bar), progress, gameNum+1, totalGames)
+	// Use the display package to show progress
+	display.DisplayProgressBar(gameNum, totalGames)
 }
 
 // Helper functions for board evaluation

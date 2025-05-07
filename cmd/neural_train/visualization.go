@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
@@ -25,71 +24,71 @@ func ClearScreen() {
 
 // DisplayBoard displays the current board state
 func DisplayBoard(board *game.Board) {
-	fmt.Println("\nCurrent Board:")
-	fmt.Print(board.String())
+	gameLogger.Info("\nCurrent Board:")
+	gameLogger.Info("%s", board.String())
 }
 
 // DisplayMoveProbabilities displays the move probabilities
 func DisplayMoveProbabilities(probabilities []float64, selectedMove int) {
-	fmt.Println("\nMove Probabilities:")
+	gameLogger.Info("\nMove Probabilities:")
 	for i, prob := range probabilities {
 		row, col := neural.MoveIndexToRowCol(i)
 		if i == selectedMove {
-			fmt.Printf("Position (%d,%d): %.2f%% [SELECTED]\n", row, col, prob*100)
+			gameLogger.Info("Position (%d,%d): %.2f%% [SELECTED]", row, col, prob*100)
 		} else {
-			fmt.Printf("Position (%d,%d): %.2f%%\n", row, col, prob*100)
+			gameLogger.Info("Position (%d,%d): %.2f%%", row, col, prob*100)
 		}
 	}
 }
 
 // DisplayGameProgress displays the progress of the current game
 func DisplayGameProgress(gameNum, totalGames int, moveNum int, currentPlayer string, epsilon float64) {
-	fmt.Printf("\nGame %d/%d (Move %d) - Player: %s (Epsilon: %.2f)\n",
+	gameLogger.Info("\nGame %d/%d (Move %d) - Player: %s (Epsilon: %.2f)",
 		gameNum+1, totalGames, moveNum+1, currentPlayer, epsilon)
 }
 
 // DisplayGameResult displays the result of a game
 func DisplayGameResult(record GameRecord) {
-	fmt.Println("\nGame Result:")
+	gameLogger.Info("\nGame Result:")
 	if record.Winner == "X" {
-		fmt.Println("Player X wins!")
+		gameLogger.Info("Player X wins!")
 	} else if record.Winner == "O" {
-		fmt.Println("Player O wins!")
+		gameLogger.Info("Player O wins!")
 	} else {
-		fmt.Println("It's a draw!")
+		gameLogger.Info("It's a draw!")
 	}
 }
 
 // DisplayTrainingProgress displays the overall training progress
 func DisplayTrainingProgress(gameNum, totalGames int, xWins, oWins, draws int, epsilon float64) {
 	winRate := float64(xWins+oWins) / float64(gameNum+1) * 100
-	fmt.Printf("\nTraining Progress: %d/%d games (%.1f%% complete)\n",
+	gameLogger.Info("\nTraining Progress: %d/%d games (%.1f%% complete)",
 		gameNum+1, totalGames, float64(gameNum+1)/float64(totalGames)*100)
-	fmt.Printf("X Wins: %d, O Wins: %d, Draws: %d (Win Rate: %.1f%%)\n",
+	gameLogger.Info("X Wins: %d, O Wins: %d, Draws: %d (Win Rate: %.1f%%)",
 		xWins, oWins, draws, winRate)
-	fmt.Printf("Current Epsilon: %.2f\n", epsilon)
+	gameLogger.Info("Current Epsilon: %.2f", epsilon)
 }
 
 // DisplayStrategyInfo displays information about the strategy used
 func DisplayStrategyInfo(board *game.Board, move int) {
 	// Check for fork creation
 	if isForkCreation(board, move) {
-		fmt.Println("\n[STRATEGY] Fork Creation Detected!")
+		gameLogger.Info("\n[STRATEGY] Fork Creation Detected!")
 	}
 
 	// Check for fork blocking
 	if isForkBlocking(board, move) {
-		fmt.Println("\n[STRATEGY] Fork Blocking Detected!")
+		gameLogger.Info("\n[STRATEGY] Fork Blocking Detected!")
 	}
 
 	// Check for winning move
 	if isWinningMove(board, move) {
-		fmt.Println("\n[STRATEGY] Winning Move Detected!")
+		gameLogger.Info("\n[STRATEGY] Winning Move Detected!")
 	}
 
 	// Check for blocking opponent's winning move
 	if isBlockingMove(board, move) {
-		fmt.Println("\n[STRATEGY] Blocking Move Detected!")
+		gameLogger.Info("\n[STRATEGY] Blocking Move Detected!")
 	}
 }
 
@@ -99,7 +98,7 @@ func VisualizeGame(record GameRecord, displayDelay time.Duration) {
 		ClearScreen()
 
 		// Display game progress
-		fmt.Printf("\nGame Replay - Move %d/%d\n", i+1, len(record.States))
+		gameLogger.Info("\nGame Replay - Move %d/%d", i+1, len(record.States))
 
 		// Display board
 		DisplayBoard(state.Board)

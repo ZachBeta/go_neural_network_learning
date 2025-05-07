@@ -1,9 +1,10 @@
 package neural
 
 import (
-	"fmt"
 	"math"
 	"math/rand"
+
+	"github.com/ZachBeta/go_neural_network_learning/pkg/logger"
 )
 
 // SetRandomSeed sets the random seed for reproducibility
@@ -13,50 +14,50 @@ func SetRandomSeed(seed int64) {
 
 // PrintWeights prints the weights of a neuron
 func PrintWeights(neuron *Neuron) {
-	fmt.Printf("Weights: [")
+	logger.Info("Weights: [")
 	for i, weight := range neuron.Weights {
 		if i > 0 {
-			fmt.Printf(", ")
+			logger.Info(", ")
 		}
-		fmt.Printf("%.4f", weight)
+		logger.Info("%.4f", weight)
 	}
-	fmt.Printf("], Bias: %.4f\n", neuron.Bias)
+	logger.Info("], Bias: %.4f", neuron.Bias)
 }
 
 // PrintLayer prints the weights of all neurons in a layer
 func PrintLayer(layer *Layer) {
-	fmt.Printf("Layer with %d neurons:\n", len(layer.Neurons))
+	logger.Info("Layer with %d neurons:", len(layer.Neurons))
 	for i, neuron := range layer.Neurons {
-		fmt.Printf("Neuron %d: ", i)
+		logger.Info("Neuron %d: ", i)
 		PrintWeights(neuron)
 	}
 }
 
 // PrintNetwork prints the structure of a network
 func PrintNetwork(network *Network) {
-	fmt.Println("Network Structure:")
-	fmt.Printf("Output Layer: %d neurons\n", network.OutputLayer.GetNeuronCount())
+	logger.Info("Network Structure:")
+	logger.Info("Output Layer: %d neurons", network.OutputLayer.GetNeuronCount())
 	PrintLayer(network.OutputLayer)
 }
 
 // PrintOutput prints the output of a layer
 func PrintOutput(output []float64) {
-	fmt.Printf("Output: [")
+	logger.Info("Output: [")
 	for i, val := range output {
 		if i > 0 {
-			fmt.Printf(", ")
+			logger.Info(", ")
 		}
-		fmt.Printf("%.4f", val)
+		logger.Info("%.4f", val)
 	}
-	fmt.Printf("]\n")
+	logger.Info("]")
 }
 
 // PrintMoveProbabilities prints the move probabilities
 func PrintMoveProbabilities(probabilities []float64) {
-	fmt.Println("Move Probabilities:")
+	logger.Info("Move Probabilities:")
 	for i, prob := range probabilities {
 		row, col := MoveIndexToRowCol(i)
-		fmt.Printf("(%d,%d): %.4f\n", row, col, prob)
+		logger.Info("(%d,%d): %.4f", row, col, prob)
 	}
 }
 
